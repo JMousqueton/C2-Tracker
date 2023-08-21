@@ -26,11 +26,10 @@ jobs:
           SHODAN_API_KEY: ${{ secrets.SHODAN_API_KEY }} 
         run: |
           python3 tracker.py
-          cat data/all.txt
       - name: save changes
         run: |
           git add .
           git config --global user.email "julien@mousqueton.io"
           git config --global user.name "JMousqueton"
-          git commit --all --message "Nightly update" || echo "no changes to commit"
+          git commit --all --message "Nightly Update" || echo "no changes to commit"
           git push

@@ -1,10 +1,47 @@
+#!/usr/bin/env python3
+"""
+Script Name: c2-tracker
+Description: Track C2 server using shodan queries
+"""
+
+# Import necessary modules
 import os
 from dotenv import load_dotenv
-from shodan import Shodan
+from shodan import Shodan, APIError
+import logging
+
+
+# Logging 
+logging.basicConfig(
+    format='%(asctime)s,%(msecs)d %(levelname)-8s %(message)s',
+    datefmt='%Y-%m-%d:%H:%M:%S',
+    level=logging.INFO
+    )
+
+def stdlog(msg):
+    '''standard infologging'''
+    logging.info(msg)
+
+def errlog(msg):
+    '''standard error logging'''
+    logging.error(msg)
 
 def shodan():
     api_key = os.environ["SHODAN_API_KEY"].strip()
     api = Shodan(api_key)
+
+    try:
+        api_info = api.info()
+        remaining_queries = api_info["usage_limits"]["query_credits"]
+        query_credits = remaining_queries - api_info["scan_credits"]
+        if query_credits > 0:
+            stdlog("Shodan usage: "+ str(query_credits) + "/" + str(remaining_queries))
+        else:
+            errlog("No more Shodan credit ("+ str(query_credits) + "/" + str(remaining_queries)+")")
+            exit(1)
+    except APIError as error:
+        errlog("Error while retrieving API info: " + str(error))
+
     # https://michaelkoczwara.medium.com/hunting-c2-with-shodan-223ca250d06f
     # https://michaelkoczwara.medium.com/cobalt-strike-c2-hunting-with-shodan-c448d501a6e2
     # https://twitter.com/MichalKoczwara/status/1591750513238118401?cxt=HHwWgsDUiZGqhJcsAAAA
@@ -80,11 +117,6 @@ def shodan():
         ]
     }
 
-    # https://www.techiedelight.com/delete-all-files-directory-python/
-    dir_to_clean = "data"
-    for file in os.scandir(dir_to_clean):
-        os.remove(file.path)
-
     ip_set_from_all_products = set()
     count_of_all_ips = 0
     count_of_products = 0
@@ -92,36 +124,38 @@ def shodan():
         count_of_products += 1
         count_of_product_ips = 0
         ip_set_from_product = set()
-        product_ips_file = open(f"data/{product} IPs.txt", "a")
         for query in queries[product]:
-            print(f"Product: {product}, Query: {query}")
-            for result in api.search_cursor(query):
-                ip = str(result["ip_str"])
-                ip_set_from_product.add(ip)
-                ip_set_from_all_products.add(ip)
+            stdlog("Product: " + product + ", Query: " + query)
+            try:
+                for result in api.search_cursor(query):
+                    ip = str(result["ip_str"])
+                    ip_set_from_product.add(ip)
+                    ip_set_from_all_products.add(ip)
+            except APIError as error:
+                errlog(error)
+        product_ips_file = open(f"data/{product} IPs.txt", "w")
         for ip in ip_set_from_product:
             product_ips_file.write(f"{ip}\n")
             count_of_product_ips += 1
-        print(f"- Created data/{product} IPs.txt")
-        if count_of_product_ips == 1:
-            print(f"- Documented {count_of_product_ips} IP address\n\n")
-        elif count_of_product_ips > 1:
-            print(f"- Documented {count_of_product_ips} unique IP addresses\n\n")
+        product_ips_file.closed
+        stdlog("Created data/"+ product + " IPs.txt with " + str(count_of_product_ips) + " unique IP addresses from SHODAN")
 
     all_ips_file = open("data/all.txt", "a")
     for ip in ip_set_from_all_products:
         all_ips_file.write(f"{ip}\n")
         count_of_all_ips += 1
-    print("\n- Created data/all.txt")
-    print(f"- Searched for {count_of_products} different tools/malware")
-    if count_of_all_ips == 1:
-        print(f"- Documented {count_of_all_ips} IP address")
-    elif count_of_all_ips > 1:
-        print(f"- Documented {count_of_all_ips} unique IP addresses")
+    stdlog("Created SHODAN all data with " + str(count_of_all_ips) +" unique IP addresses")
 
-def main():
-    load_dotenv()
-    shodan()
 
 if __name__ == '__main__':
-    main()
+    print('')
+    print('░▒█▀▀▄░█▀█░░░░▀▀█▀▀░█▀▀▄░█▀▀▄░█▀▄░█░▄░█▀▀░█▀▀▄')
+    print('░▒█░░░░▒▄▀░▀▀░░▒█░░░█▄▄▀░█▄▄█░█░░░█▀▄░█▀▀░█▄▄▀')
+    print('░▒█▄▄▀░█▄▄░░░░░▒█░░░▀░▀▀░▀░░▀░▀▀▀░▀░▀░▀▀▀░▀░▀▀v1')
+    print('')
+    load_dotenv()
+    if 'SHODAN_API_KEY' not in os.environ:
+        errlog("The SHODAN_API_KEY environment variable is not defined.")
+        exit(1)  # Exit the script with a non-zero status code
+    # query Shodan
+    shodan()
