@@ -24,7 +24,7 @@ jobs:
         env:
           SHODAN_API_KEY=: ${{ secrets.SHODAN_API_KEY }} 
         run: |
-          python3 tacker.py
+          python3 tracker.py
       - name: save changes
         run: |
           git config --global user.email "julien@mousqueton.io"
