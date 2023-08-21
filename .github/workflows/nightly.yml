@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  CTI:
+  NightlyBuild:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     environment: CI
@@ -22,7 +22,7 @@ jobs:
           pip3 install -r requirements.txt
       - name: run nightlybuild
         env:
-          SHODAN_API_KEY=: ${{ secrets.SHODAN_API_KEY }} 
+          SHODAN_API_KEY: ${{ secrets.SHODAN_API_KEY }} 
         run: |
           python3 tracker.py
       - name: save changes
