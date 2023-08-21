@@ -29,7 +29,7 @@ jobs:
           cat data/all.txt
       - name: save changes
         run: |
-          git add -u data
+          git add .
           git config --global user.email "julien@mousqueton.io"
           git config --global user.name "JMousqueton"
           git commit --all --message "Nightly update" || echo "no changes to commit"
