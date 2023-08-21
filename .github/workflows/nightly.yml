@@ -1,0 +1,33 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: '30 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  CTI:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: CI
+    steps:
+      - name: checkout the repo
+        uses: actions/checkout@v3
+      - name: Use Python 3.10 
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' 
+      - name: install dependencies
+        run: |
+          pip3 install -r requirements.txt
+      - name: run nightlybuild
+        env:
+          SHODAN_API_KEY=: ${{ secrets.SHODAN_API_KEY }} 
+        run: |
+          python3 tacker.py
+      - name: save changes
+        run: |
+          git config --global user.email "julien@mousqueton.io"
+          git config --global user.name "JMousqueton"
+          git commit --all --message "Nightly update" || echo "no changes to commit"
+          git push
