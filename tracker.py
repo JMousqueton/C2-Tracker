@@ -48,11 +48,13 @@ def shodan():
     # https://github.com/BushidoUK/OSINT-SearchOperators/blob/main/ShodanAdversaryInfa.md
     # https://twitter.com/MichalKoczwara/status/1641119242618650653
     # https://twitter.com/MichalKoczwara/status/1641676761283850241
+    # https://blog.projectdiscovery.io/hunting-c2-servers/
     queries = {
         "Cobalt Strike C2": [
             "ssl.cert.serial:146473198",
             "hash:-2007783223 port:50050",
             "ssl.jarm:07d14d16d21d21d00042d41d00041de5fb3038104f457d92ba02e9311512c2",
+            "ssl.jarm:07d14d16d21d21d07c42d41d00041d24a458a375eef0c576d23a7bab9a9fb1+port:443",
             "product:'Cobalt Strike Beacon'",
             "http.html:cs4.4",
             "ssl:foren.zik"
@@ -114,7 +116,8 @@ def shodan():
             "http.html:XMRig",
             "http.favicon.hash:-782317534",
             "http.favicon.hash:1088998712"
-        ]
+        ],
+        "AsyncRat C2": [ "ssl.cert.issuer.cn:AsyncRAT"],
     }
 
     ip_set_from_all_products = set()
